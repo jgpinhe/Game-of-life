@@ -1,0 +1,130 @@
+//We always have to include the library
+#include "LedControlMS.h"
+int estat_actual[8][8];
+int nou_estat[8][8];
+int sx=8;
+int sy=8;
+float densitat=0.1;
+/*
+ Now we need a LedControl to work with.
+ ***** These pin numbers will probably not work with your hardware *****
+ pin 12 is connected to the DataIn 
+ pin 11 is connected to the CLK 
+ pin 10 is connected to LOAD 
+ We have only a single MAX72XX.
+ */
+LedControl lc=LedControl(12,11,10,1);
+
+/* we always wait a bit between updates of the display */
+unsigned long delaytime=10;
+
+void setup() {
+
+
+  Serial.begin(9600);
+  randomSeed(analogRead(0));
+  /*
+   The MAX72XX is in power-saving mode on startup,
+   we have to do a wakeup call
+   */
+  lc.shutdown(0,false);
+  /* Set the brightness to a medium values */
+  lc.setIntensity(0,8);
+  /* and clear the display */
+  lc.clearDisplay(0);
+
+/* Generació d'una matriu inicial aleatoria de densitat variable*/
+for (int i = 0; i < sx * sy * densitat; i++) { 
+
+   estat_actual[(int)random(sx)][(int)random(sy)] = 1; 
+
+  } 
+    for (int c=0;c<8;c++){
+      for(int f=0;f<8;f++){
+    Serial.print("estat actual");
+    Serial.print(c);
+    Serial.print(f);
+    Serial.print(estat_actual[c][f]);
+    Serial.println("\t");
+    }
+  }
+}
+/*
+ This method will display the characters for the
+ word "Arduino" one after the other on the matrix. 
+ (you need at least 5x7 leds to see the whole chars)
+ */
+
+
+
+
+/*
+  This function lights up a some Leds in a column.
+ The pattern will be repeated on every column.
+ The pattern will blink along with the column-number.
+ column number 4 (index==3) will blink 4 times etc.
+ */
+
+
+/* 
+ This function will light up every Led on the matrix.
+ The led will blink along with the row-number.
+ row number 4 (index==3) will blink 4 times etc.
+ */
+void single() {
+  for(int row=0;row<8;row++) {
+    for(int col=0;col<8;col++) {
+      delay(delaytime);
+      lc.setLed(0,row,col,nou_estat[row][col]);
+      delay(delaytime);
+      /*
+      for(int i=0;i<col;i++) {
+        lc.setLed(0,row,col,false);
+        delay(delaytime);
+        lc.setLed(0,row,col,estat_actual[row][col]);
+        delay(delaytime); 
+      }*/
+    }
+  }
+}
+
+void loop() { 
+ int veins [8][8];
+ for(int x=0;x<8;x++){
+  for(int y=0;y<8;y++){
+    
+ veins[x][y]=estat_actual[(x + 1) % sx][y] +  estat_actual[x][(y + 1) % sy] + 
+
+         estat_actual[(x + sx - 1) % sx][y] + estat_actual[x][(y + sy - 1) % sy] + 
+
+         estat_actual[(x + 1) % sx][(y + 1) % sy] + estat_actual[(x + sx - 1) % sx][(y + 1) % sy] + 
+
+         estat_actual[(x + sx - 1) % sx][(y + sy - 1) % sy] + 
+
+         estat_actual[(x + 1) % sx][(y + sy - 1) % sy]; 
+Serial.print("veins");
+Serial.print(x);
+Serial.print(y);
+Serial.print(veins[x][y]);
+Serial.println("\t");
+
+  }
+ }
+ 
+
+  
+ /*Generar nou estat*/
+ 
+  for(int x=0;x<8;x++){
+  for(int y=0;y<8;y++){
+    if(estat_actual[x][y]==0 && veins[x][y]==3){
+      nou_estat[x][y]=1;}
+
+      if(estat_actual[x][y]==1 && (veins<2 ||veins>3)){
+        nou_estat[x][y]=0;
+      }
+      }
+    }
+  single();
+  
+}
